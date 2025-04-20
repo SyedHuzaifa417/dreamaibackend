@@ -1,0 +1,35 @@
+options:
+  logging: CLOUD_LOGGING_ONLY  # Logs will be sent only to Cloud Logging
+
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      echo "Deploying to Google Compute Engine: krybe-manu..."
+
+      # Fetch secrets from Secret Manager
+#      export GITHUB_PAT=$(gcloud secrets versions access latest --secret="_GITHUB_PAT")
+#      export ASSEMBLYAI_API_KEY=$(gcloud secrets versions access latest --secret="ASSEMBLYAI_API_KEY")
+
+      # SSH into your GCE instance and pull the latest code using the PAT
+      gcloud compute ssh manujajayawardanais@krybe-manu \
+        --zone us-east1-c \
+        --impersonate-service-account=cloudbuild@krybe1.iam.gserviceaccount.com \
+        --quiet \
+        --command "
+        cd /home/manujajayawardanais/krybe_backend && \
+        git remote set-url origin https://$GITHUB_PAT@github.com/manujajay/krybe_backend.git && \
+        git pull origin main && \
+        # Create systemd override directory
+        sudo mkdir -p /etc/systemd/system/krybe_backend.service.d && \
+        # Set up environment variables
+        # Add to systemd service environment
+        sudo systemctl daemon-reload && \
+        # Activate venv and install dependencies
+        source venv/bin/activate && \
+        pip install -r requirements.txt && \
+        # Restart services
+        sudo systemctl restart krybe_backend.service && \
+        sudo systemctl restart nginx"

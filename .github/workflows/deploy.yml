@@ -1,0 +1,72 @@
+name: Deploy Flask App to GCP VM
+
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python environment for testing (New Step Added)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'  # Use Python 3.10 for testing
+
+      # Step 3: Install dependencies for tests
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+#          pip install git+https://github.com/openai/whisper.git
+
+#      # Step 4: Run server health check before deployment
+#      - name: Run server health check
+#        run: |
+#          python3 -m unittest test_server_health.py -v
+
+      # Step 5: SSH Deploy to GCP VM (Existing Code, No Changes Here)
+      - name: SSH Deploy to GCP VM
+#        if: success()  # Only run this step if the tests pass
+        uses: appleboy/ssh-action@master
+        with:
+          host: 34.171.116.224  # The public IP address of your VM
+          username: aqcheems  # Your GCP VM's SSH username
+          key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}  # Your GCP VM's private SSH key
+          port: 80  # Default SSH port
+          script: |
+            echo "SSH Connection Successful. Starting deployment..."
+
+            # Navigate to the app directory on the GCP VM
+            cd /home/manujajayawardanais/krybe_backend
+
+            # Pull the latest code
+            git reset --hard
+            git pull origin main
+  
+            # Activate virtual environment and install dependencies
+            source venv/bin/activate
+            pip install -r requirements.txt
+            pip install --upgrade --no-deps --force-reinstall git+https://github.com/openai/whisper.git
+
+            # Ensure Redis is running (Required for Celery)
+            sudo systemctl restart redis
+            
+            # Restart Flask app (which also include Celery - restarting Celery worker within app.py) and Nginx
+            sudo systemctl daemon-reload
+            sudo systemctl restart krybe_backend.service
+            sudo systemctl restart nginx
+
+            # Restart Celery worker explicitly
+            echo "Restarting Celery worker..."
+            sudo systemctl restart celery.service
+            echo "Celery worker restarted."
+
+            echo "Deployment finished!"
