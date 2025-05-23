@@ -5,3 +5,6 @@ bcrypt
 requests
 google-cloud-vision
 dateutils
+stripe
+replicate
+python-dotenv
