@@ -3,29 +3,45 @@ import sqlite3
 def init_db(path_to_database):
     conn = sqlite3.connect(path_to_database)
     cursor = conn.cursor()
-    ('''
-    CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            email TEXT NOT NULL,
-            password TEXT NOT NULL,
-            profile_picture BLOB,
-            otp TEXT,
-            image_count INTEGER DEFAULT 0,
-            video_count INTEGER DEFAULT 0,
-            subscription_plan TEXT,
-            subscription_validity TEXT,
-            subscription_start_date TEXT,
-            subscription_end_date TEXT    
-            )
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        profile_picture BLOB,
+        otp TEXT,
+        image_count INTEGER DEFAULT 0,
+        video_count INTEGER DEFAULT 0,
+        subscription_plan TEXT,
+        subscription_duration TEXT,
+        subscription_status TEXT DEFAULT 'inactive',
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        subscription_start_date TEXT,
+        subscription_end_date TEXT,
+        last_reset_date TEXT,
+        daily_image_count INTEGER DEFAULT 0,
+        daily_video_minutes INTEGER DEFAULT 0
+    )
     ''')
-    cursor.execute("SELECT * FROM users")
-    UseRows = cursor.fetchall()
-    #for row in UseRows :
-    #    print(f"userData>>> id : {row[0]} | Name: {row[1]} | Email: {row[2]} | Password: {row[3]}")
-   
-    conn.commit()
     
+    # Create a table for subscription history
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS subscription_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_email TEXT NOT NULL,
+        subscription_plan TEXT NOT NULL,
+        subscription_duration TEXT NOT NULL,
+        stripe_subscription_id TEXT,
+        start_date TEXT NOT NULL,
+        end_date TEXT,
+        status TEXT NOT NULL,
+        FOREIGN KEY (user_email) REFERENCES users(email)
+    )
+    ''')
+    
+    conn.commit()
     conn.close()
 
 
