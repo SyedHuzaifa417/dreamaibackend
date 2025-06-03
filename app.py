@@ -32,7 +32,7 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB
 CORS(app) #, support_credentials=True) 
 
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-
+FRONTEND_URL = os.getenv('FRONTEND_URL')
 path_to_database = os.path.join(os.getcwd(),"database")
 app.secret_key = 'supersecretkey'
 
@@ -1435,8 +1435,8 @@ def create_checkout_session():
                     'quantity': 1,
                 }],
                 mode='subscription',
-                success_url='{FRONTEND_URL}/account?session_id={CHECKOUT_SESSION_ID}&status=success',
-                cancel_url='{FRONTEND_URL}/subscriptions?status=cancelled',
+                success_url = f'{FRONTEND_URL}/account?session_id={{CHECKOUT_SESSION_ID}}&status=success',
+                cancel_url=f'{FRONTEND_URL}/subscriptions?status=cancelled',
                 metadata={
                     'user_email': email,
                     'plan_type': plan_type,
