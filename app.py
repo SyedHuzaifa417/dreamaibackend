@@ -1435,8 +1435,8 @@ def create_checkout_session():
                     'quantity': 1,
                 }],
                 mode='subscription',
-                success_url='http://localhost:3000/account?session_id={CHECKOUT_SESSION_ID}&status=success',
-                cancel_url='http://localhost:3000/subscriptions?status=cancelled',
+                success_url='{FRONTEND_URL}/account?session_id={CHECKOUT_SESSION_ID}&status=success',
+                cancel_url='{FRONTEND_URL}/subscriptions?status=cancelled',
                 metadata={
                     'user_email': email,
                     'plan_type': plan_type,
